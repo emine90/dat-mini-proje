@@ -5,16 +5,13 @@ import psycopg2
 from psycopg2 import pool
 from psycopg2.extras import RealDictCursor
 from flask import Flask, render_template_string, request, redirect, url_for
-from dotenv import load_dotenv
-
-# .env dosyasındaki gizli veritabanı URI adresini yüklüyoruz
-load_dotenv()
 
 app = Flask(__name__)
 
-DEFAULT_URI = "postgresql://postgres.bvdywitsulunkyjdmclg:EMİNE1234.?i@aws-1-ap-northeast-2.pooler.supabase.com:5432/postgres"
-POSTGRES_URI = os.getenv("POSTGRES_URI") or DEFAULT_URI
-# 🚀 Bağlantı Havuzu (Connection Pool - Anlık kopmaları önler ve hızı artırır)
+# Doğrudan sabitlenen Supabase Bağlantı Adresi (Şifre URL-encoded hallidir)
+POSTGRES_URI = "postgresql://postgres.bvdywitsulunkyjdmclg:EM%C4%B0NE1234.%3Fi@aws-1-ap-northeast-2.pooler.supabase.com:5432/postgres"
+
+# 🚀 Bağlantı Havuzu (Connection Pool)
 try:
     db_pool = psycopg2.pool.SimpleConnectionPool(1, 10, POSTGRES_URI)
     print("Veritabanı bağlantı havuzu başarıyla oluşturuldu.")
@@ -30,11 +27,12 @@ def get_db_connection():
             if db_pool is None or db_pool.closed:
                 db_pool = psycopg2.pool.SimpleConnectionPool(1, 10, POSTGRES_URI)
             
-            conn = db_pool.getconn()
-            if conn:
-                with conn.cursor() as cur:
-                    cur.execute("SELECT 1;")
-                return conn
+            if db_pool:
+                conn = db_pool.getconn()
+                if conn:
+                    with conn.cursor() as cur:
+                        cur.execute("SELECT 1;")
+                    return conn
         except Exception as e:
             print(f"Bağlantı denemesi {attempt + 1} başarısız: {e}")
             time.sleep(0.5)
@@ -54,6 +52,7 @@ def release_db_connection(conn):
     elif conn:
         conn.close()
 
+# KODUN GERİ KALANI (CAR_BRANDS, HTML_TEMPLATE ve @app.route fonksiyonları) AYNEN KALACAK...
 CAR_BRANDS = sorted([
     "Alfa Romeo", "Audi", "BMW", "Chery", "Chevrolet", "Citroen", "Dacia", "Fiat", 
     "Ford", "Honda", "Hyundai", "Isuzu", "Jaguar", "Jeep", "Kia", "Lada", 
